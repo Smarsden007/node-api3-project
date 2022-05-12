@@ -10,4 +10,28 @@ server.get('/', (req, res) => {
   res.send(`<h2>Let's write some middleware!</h2>`);
 });
 
+server.get( (req, res) => {
+  
+})
+server.get( (req, res) => {
+  
+})
+server.get( (req, res) => {
+  
+})
+server.post( (req, res) => {
+  
+})
+server.put( (req, res) => {
+  
+})
+server.delete( (req, res) => {
+  
+})
+server.get( (req, res) => {
+  
+})
+
+
+
 module.exports = server;
