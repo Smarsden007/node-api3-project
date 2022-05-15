@@ -1,85 +1,99 @@
 const express = require('express');
+const Users = require('./users-model');
 const {
   validateUserId,
   validateUser,
-  validatePost
-} = require('../middleware/middleware')
-
-const User = require('./users-model')
-const post = require('../posts/posts-model')
-
+  validatePost} = require('../middleware/middleware');
+// You will need `users-model.js` and `posts-model.js` both
+// The middleware functions also need to be required
 
 const router = express.Router();
 
-router.get('/', (req, res, next) => {
-  User.get()
-  .then(users => {
-    res.json(users)
+router.get('/', (req, res) => {
+  // RETURN AN ARRAY WITH ALL THE USERS
+  Users.get()
+  .then(user => {
+    res.status(200).json(user)
   })
-  .catch(next)
+  .catch(err => {
+    res.status(500).json({message: err.message})
+  })
 });
 
 router.get('/:id', validateUserId, (req, res) => {
-res.json(req.user)
+  // RETURN THE USER OBJECT
+  // this needs a middleware to verify user id
+  res.status(200).json(req.user)
 });
 
-router.post('/', validateUser, (req, res) => {
-  User.insert({ name: req.name})
-  .then(newUser => {
-    throw new Error('ouch')
+router.post('/', validateUser, async (req, res) => {
+  // RETURN THE NEWLY CREATED USER OBJECT
+  // this needs a middleware to check that the request body is valid
+  try{
+    const newUser = await Users.insert(req.body)
     res.status(201).json(newUser)
-  })
-  .catch(next)
+  }catch (err){
+    res.status(500).json({message: 'Something went wrong'})
+  }
 });
 
-router.put('/:id', validateUserId, validateUser, (req, res) => {
-  User.update(req.params.id, { name: req.name })
-  .then(rowsChanged => {
-    return User.getById(req.params.id)
-  })
-  .then(user => {
-    res.json(user)
-  })
-  .catch(next)
+router.put('/:id', validateUser,  validateUserId, async (req, res) => {
+  // RETURN THE FRESHLY UPDATED USER OBJECT
+  // this needs a middleware to verify user id
+  // and another middleware to check that the request body is valid
+  const changes = req.body
+  const {id} = req.params
+  const updatedUser = await Users.update(id, changes)
+  res.status(201).json(updatedUser)
 });
 
 router.delete('/:id', validateUserId, async (req, res) => {
+  // RETURN THE FRESHLY DELETED USER OBJECT
+  // this needs a middleware to verify user id
   try{
-    const result = await user.remove(req.params.id)
-    res.json(req.user)
-  } catch (err) {
-    next(err)
-  }
-  
-});
-
-router.get('/:id/posts', validateUserId, async (req, res, next) => {
-  try{
-    const result = await User.getUserPosts(req.params.id)
-    res.json(results)
-  } catch (err) {
-    next(err)
+    const user = await Users.getById(req.params.id)
+    res.status(200).json(user)
+  }catch(err){
+    res.status(500).json({message: 'something went wrong'})
   }
 });
 
-router.post('/:id/posts', validateUserId, async (req, res) => {
-    try {
-      const result = await post.insert({
-        user_id: req.params.id,
-        text: req.text,
-      })
-      res.status(201).json(result)
-    } catch (err) {
-      next(err)
-    }
+router.get('/:id/posts', validateUserId, (req, res) => {
+  // RETURN THE ARRAY OF USER POSTS
+  // this needs a middleware to verify user id
+  const {id} = req.params
+  Users.getUserPosts(id)
+  .then(messages => {
+    res.status(200).json(messages)
+  })
+  .catch(err => {
+    console.log(err)
+    res.status(500).json({message: 'Error getting the posts for the user'})
+  })
+});
+
+router.post('/:id/posts', validateUserId, validatePost, async (req, res, next) => {
+ // RETURN THE NEWLY CREATED USER POST
+  // this needs a middleware to verify user id
+  // and another middleware to check that the request body is valid
+  try{
+    const newPost = await Post.insert({
+      user_id: req.params.id,
+      text: req.text,
+    })
+    res.status(201).json(newPost)
+  }catch (err){
+    next(err)
+  }
 });
 
 router.use((err, req, res, next) => {
   res.status(err.status || 500).json({
-    customMessage: 'something tragic inside posts router happened',
+    customMessage: 'Error inside user router',
     message: err.message,
-    stack:err.stack,
+    stack: err.stack
   })
 })
 
+// do not forget to export the router
 module.exports = router

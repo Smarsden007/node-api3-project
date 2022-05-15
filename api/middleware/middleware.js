@@ -1,60 +1,60 @@
-const User = require('../users/users-model')
-
-
+const Users = require('../users/users-model');
 
 function logger(req, res, next) {
-  const timestamp = new Date().toLocaleString()
-  const method = req.method
-  const url = req.orignalUrl
-  console.log(`[${timestamp}] ${method} to ${url}`)
+  // DO YOUR MAGIC
+  console.log(req.url, req.method)
   next()
 }
 
-async function validateUserId(req, res, next) {
-  try {
-    const user = await User.getById(req.params.id)
-    if(!user){
-      res.status(404).json({
-        message: 'no such user',
-      })
-    } else {
-      req.user = user
-      next()
+  // DO YOUR MAGIC
+  const validateUserId = async (req, res, next) => {
+    try{
+      const {id} = req.params
+      const user = await Users.getById(id)
+      if(!user){
+        res.status(404).json({message: 'User not found'})
+      }else{
+        req.user = user
+        next()
+      }
+    }catch(err){
+      res.status(500).json({message: err})
     }
-  } catch (err) {
-    res.status(500).json({
-      message: 'problem finding user',
-    })
-  }
 }
-
 
 function validateUser(req, res, next) {
-  const { name } = req.body
-  if (!name || !name.trim()) {
-    res.status(400).json({
-      message: 'missing required name field'
-    })
-  } else {
-    req.name = name.trim()
-    next()
+  // DO YOUR MAGIC
+  try{
+    const user = req.body
+    if(!user.name){
+      res.status(400).json({message: 'Missing required name field'})
+    }else{
+      next()
+    }
+  }catch(err){
+    console.log(err)
+    res.status(500).json({message: err})
   }
 }
-
 
 function validatePost(req, res, next) {
-  const { text } = req.body
-  if (!text || !text.trim()) {
-    res.status(400).json({
-      message: 'missing required text field'
-    })
-  } else {
-    req.text = text.trim()
-    next()
+  // DO YOUR MAGIC
+  try{
+    const {text} = req.body
+    if(!text){
+      res.status(400).json({message: 'Missing required text field'})
+    }else{
+      next()
+    }
+  }catch(err){
+    res.status(500).json({message: err.message})
   }
 }
 
-module.exports = {
-  logger,validateUserId,validateUser,validatePost,
-}
 // do not forget to expose these functions to other modules
+module.exports = {
+  logger,
+  validateUserId,
+  validateUser,
+  validatePost
+}
